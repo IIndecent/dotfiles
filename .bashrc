@@ -133,37 +133,10 @@ fi
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-#############
-## colorls ##
-#############
-if [ $(gem which colorls) ]; then
-  COLORLS=$(dirname $(gem which colorls))/tab_complete.sh
-  source $COLORLS
-  alias lc='colorls -lA --sd'
-fi
-
 ################
 ## WINEPREFIX ##
 ################
 export WINEPREFIX=~/.wine
-
-####################################################
-## Determine if current directory is a git branch ##
-####################################################
-function git_branch {
-  ref=$(git branch 2>/dev/null | grep '^*' | colrm 1 2) || return
-  revno=$(git rev-parse HEAD 2> /dev/null | cut -c1-7) || return
-  if [ "$ref" ]; then
-    printf $RED$DASH$CYAN"[git$DARK_YELLOW:$CYAN${ref}$DARK_YELLOW:$CYAN${revno}]"
-  fi
-}
-
-## Determine if you're working in a Python virtual environment ##
-function virtual_env {
-  if [ "$VIRTUAL_ENV" != "" ]; then
-    printf $RED$DASH$PURPLE"[${VIRTUAL_ENV##*/}]"
-  fi
-}
 
 GIT_REF="$(git branch 2>/dev/null | grep '^*' | colrm 1 2)"
 GIT_REV="$(git rev-parse HEAD 2> /dev/null | cut -c1-7)"
@@ -172,70 +145,214 @@ if [ "$GIT_REF" ]; then
 else
   GIT_BRANCH=""
 fi
-echo $GIT_BRANCH
-echo ${#GIT_BRANCH}
 
 ###################
 ## Set variables ##
 ###################
 ## Colors ##
-RED="\e[0;31m"
-ROOT_RED="\e[01;31m"
-WHITE="\e[0;37m"
-LIGHT_YELLOW="\e[01;33m"
-DARK_YELLOW="\e[38;5;214m"
-DARK_BLUE="\e[38;5;24m"
-LIGHT_CYAN="\e[01;96m"
-CYAN="\e[0;36m"
-PURPLE="\e[0;35m"
-GREEN="\e[0;32m"
-CURSOR="\e[0m"
+RED="\[\e[0;31m\]"
+ROOT_RED="\[\e[01;31m\]"
+WHITE="\[\e[0;37m\]"
+LIGHT_YELLOW="\[\e[01;33m\]"
+DARK_YELLOW="\[\e[38;5;214m\]"
+DARK_BLUE="\[\e[38;5;24m\]"
+LIGHT_CYAN="\[\e[01;96m\]"
+BRIGHT_CYAN="\[\e[01;36m\]"
+CYAN="\[\e[0;36m\]"
+PURPLE="\[\e[0;35m\]"
+LIGHT_PURPLE="\[\e[01;35m\]"
+LIGHT_GRAY="\[\e[00;37m\]"
+DARK_GRAY="\[\e[01;30m\]"
+GREEN="\[\e[0;32m\]"
+RESET="\[\e[00m\]"
 
 ## Symbols ##
-DASH="\342\224\200"
-TOP_CORNER="\342\224\214"
-BOT_CORNER="\342\224\224"
-SM_SQUARE="\342\225\274"
-EX="\342\234\227"
+DASH="─"
+TOP_CORNER="┌"
+BOT_CORNER="└"
+ARROW="▶"
+BOX="╼"
+EX="✗"
+CHECK="✔"
+SEPERATOR="ߦ"
 
-## enable color support of ls and also add handy aliases ##
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    #alias ls='ls --color=auto'
-    if [ gem ]; then
-      if [[ $(gem list '^colorls$' -i) ]]; then
-        alias ls='colorls'
-      else
-        alias ls='ls -CF'
-      fi
-    fi
+GIT_ADDED="$GREEN✚"
+GIT_MODIFIED="$DARK_BLUE✹"
+GIT_DELETED="$RED✖"
+GIT_RENAMED="$PURPLE➜"
+GIT_UNMERGED="$YELLOW═"
+GIT_UNTRACKED="$CYAN✭"
+GIT_DIVERGED="$BRIGHT_CYAN↕"
+GIT_AHEAD="$GREEN↑"
+GIT_BEHIND="$RED↓"
+GIT_STASHED="$DARK_YELLOW៙"
+GIT_UP_TO_DATE="$GREEN$CHECK"
+GIT_START_FIN="Ⲯ"
 
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias ls='ls --color=auto'
 
 ## ls colors ##
-LS_COLORS=$LS_COLORS:'di=38;5;229:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207' ; export LS_COLORS
+LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207'; export LS_COLORS
 
 #######################
 ## PS1 configuration ##
 #######################
+<<OLD
 if [ "$color_prompt" = yes ]; then
-    PS1="$RED$TOP_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]$DASH')\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r\[$RED$BOT_CORNER$DASH$DASH$SM_SQUARE $DARK_YELLOW\]$ $CURSOR"
+    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]')$RED$DASH> $DARK_YELLOW$ $RESET"
 else
-    PS1="$RED$TOP_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]$DASH')\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r\[$RED$BOT_CORNER$DASH$DASH$SM_SQUARE $DARK_YELLOW\]$ $CURSOR"
+    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]')$RED$DASH> $DARK_YELLOW$ $RESET"
 fi
 unset color_prompt force_color_prompt
 
 ## If this is an xterm set the title to user@host:dir ##
 case "$TERM" in
 xterm*|rxvt*)
-    PS1="$RED$TOP_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]$DASH')\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r\[$RED$BOT_CORNER$DASH$DASH$SM_SQUARE $DARK_YELLOW\]$ $CURSOR"
+    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\[$(if [[ ${?} == 0 ]]; then echo $RED[$EX]; else echo $GREEN[$CHECK]; fi)$RED$DASH> $DARK_YELLOW$ $RESET"
     ;;
 *)
     ;;
 esac
+OLD
+
+set_prompt () {
+  local CMD=$?
+  PS1=""
+  PS1+="$RED$TOP_CORNER$DASH$RED["
+
+  if [ $EUID == 0 ]; then
+    local USR="root"
+    PS1+="$ROOT_RED"
+  else
+    local USR="$USER"
+    PS1+="$DARK_BLUE"
+  fi
+  PS1+="$USR"
+
+  PS1+="$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]"
+
+  if [ "$VIRTUAL_ENV" != "" ]; then
+    local VENV="[env:${VIRTUAL_ENV##*/}]"
+    local PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
+  else
+    local VENV=""
+    local PS1_VENV=""
+  fi
+
+  local REF="$(git branch 2>/dev/null | grep '^*' | colrm 1 2)"
+  local REVNO="$(git rev-parse HEAD 2> /dev/null | cut -c1-7)"
+  if [ "$REF" ]; then
+    local GIT_DIRTY="$EX"
+    local GIT_CLEAN="$CHECK"
+    local GIT_STATUS=$(command git status --porcelain --ignore-submodules=dirty 2> /dev/null | tail -n1)
+    if [[ -n $GIT_STATUS ]]; then
+      GIT_STATUS="$RED$GIT_DIRTY"
+    else
+      GIT_STATUS="$GREEN$GIT_CLEAN"
+    fi
+    local GIT_PROMPT="[git:$REF:$REVNO]"
+    local GIT_PROMPT_SIZE
+    ((GIT_PROMPT_SIZE=${#GIT_PROMPT}+6))
+    local PS1_GIT="$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STATUS$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_YELLOW$GIT_START_FIN$RED]"
+  else
+    local GIT_PROMPT=""
+    local GIT_PROMPT_SIZE
+    ((GIT_PROMPT_SIZE=0))
+    local PS1_GIT=""
+  fi
+
+  local CUR_DIR="$TOP_CORNER$DASH[$USER@$HOSTNAME]$DASH[$(dirs)]"
+  local PS_SIZE
+  if [ "$VENV" ];then
+    if [ "$GIT_PROMPT" ]; then
+      ((PS_SIZE=${#CUR_DIR}+${#VENV}+3))
+    else
+      ((PS_SIZE=${#CUR_DIR}+${#VENV}+2))
+    fi
+  else
+    ((PS_SIZE=${#CUR_DIR}+${#VENV}+2))
+  fi
+  local SPACE
+  ((SPACE=$COLUMNS - ($PS_SIZE + $GIT_PROMPT_SIZE)))
+  for ((i = 0; i < $SPACE; i++)); do
+    PS1+="$RED$DASH"
+  done
+
+  PS1+="$PURPLE$PS1_VENV"
+  if [ "$VENV" ] && [ "$GIT_PROMPT" ]; then
+    PS1+="$RED$DASH"
+  fi
+
+  PS1+="$PS1_GIT$DASH$BOX\n\r$RED$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED]$RED[$DARK_GRAY$(date '+%T')$RED]$DASH"
+
+  if [[ $CMD == 0 ]]; then
+    PS1+="$GREEN[$CHECK]"
+  else
+    PS1+="$RED[$EX]"
+  fi
+
+  PS1+="$RED$DASH$ARROW $RESET"
+}
+
+# Get the status of the working tree
+function git_status() {
+  local INDEX STATUS
+  INDEX=$(command git status --porcelain -b 2> /dev/null)
+  STATUS=""
+  if $(echo "$INDEX" | command grep -E '^\?\? ' &> /dev/null); then
+    STATUS="$GIT_UNTRACKED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^A  ' &> /dev/null); then
+    STATUS="$GIT_ADDED$STATUS"
+  elif $(echo "$INDEX" | grep '^M  ' &> /dev/null); then
+    STATUS="$GIT_ADDED$STATUS"
+  elif $(echo "$INDEX" | grep '^MM ' &> /dev/null); then
+    STATUS="$GIT_ADDED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^ M ' &> /dev/null); then
+    STATUS="$GIT_MODIFIED$STATUS"
+  elif $(echo "$INDEX" | grep '^AM ' &> /dev/null); then
+    STATUS="$GIT_MODIFIED$STATUS"
+  elif $(echo "$INDEX" | grep '^MM ' &> /dev/null); then
+    STATUS="$GIT_MODIFIED$STATUS"
+  elif $(echo "$INDEX" | grep '^ T ' &> /dev/null); then
+    STATUS="$GIT_MODIFIED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^R  ' &> /dev/null); then
+    STATUS="$GIT_RENAMED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^ D ' &> /dev/null); then
+    STATUS="$GIT_DELETED$STATUS"
+  elif $(echo "$INDEX" | grep '^D  ' &> /dev/null); then
+    STATUS="$GIT_DELETED$STATUS"
+  elif $(echo "$INDEX" | grep '^AD ' &> /dev/null); then
+    STATUS="$GIT_DELETED$STATUS"
+  fi
+  if $(command git rev-parse --verify refs/stash >/dev/null 2>&1); then
+    STATUS="$GIT_STASHED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^UU ' &> /dev/null); then
+    STATUS="$GIT_UNMERGED$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^## [^ ]\+ .*ahead' &> /dev/null); then
+    STATUS="$GIT_AHEAD$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^## [^ ]\+ .*behind' &> /dev/null); then
+    STATUS="$GIT_BEHIND$STATUS"
+  fi
+  if $(echo "$INDEX" | grep '^## [^ ]\+ .*diverged' &> /dev/null); then
+    STATUS="$GIT_DIVERGED$STATUS"
+  fi
+  if [ "$STATUS" == "" ]; then
+    STATUS="$GIT_UP_TO_DATE$STATUS"
+  fi
+  echo $STATUS
+}
+
+PROMPT_COMMAND='set_prompt'
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
@@ -343,7 +460,7 @@ export HISTTIMEFORMAT="%d/%m/%y %T "
 ## Do things ##
 alias fsearch='flatpak search'
 alias fuckingown='sudo chown -Rh $USER /home/$USER'
-alias pup='pip3 list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip3 install -U'
+alias pup='pip3 list --outdated --format=freeze | grep -v "^\-e" | cut -d = -f 1  | xargs -n1 pip3 install -U'
 alias speedtest='speedtest-cli'
 alias neo='clear && neofetch'
 alias wine='wine 2>~/.wine.error.log'

@@ -286,7 +286,7 @@ export HISTTIMEFORMAT="%d/%m/%y %T "
 ## Do things ##
 alias fsearch='flatpak search'
 alias fuckingown='sudo chown -Rh $USER /home/$USER'
-alias pup='pip3 list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip3 install -U'
+alias pup='pip3 list --outdated --format=freeze | grep -v "^\-e" | cut -d = -f 1  | xargs -n1 pip3 install -U'
 alias speedtest='speedtest-cli'
 alias neo='clear && neofetch'
 alias wine='wine 2>~/.wine.error.log'
