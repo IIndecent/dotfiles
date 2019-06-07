@@ -180,7 +180,7 @@ GIT_ADDED="$GREEN✚"
 GIT_MODIFIED="$DARK_BLUE✹"
 GIT_DELETED="$RED✖"
 GIT_RENAMED="$PURPLE➜"
-GIT_UNMERGED="$YELLOW═"
+GIT_UNMERGED="$DARK_YELLOW═"
 GIT_UNTRACKED="$CYAN✭"
 GIT_DIVERGED="$BRIGHT_CYAN↕"
 GIT_AHEAD="$GREEN↑"
@@ -235,7 +235,7 @@ set_prompt () {
   PS1+="$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]"
 
   if [ "$VIRTUAL_ENV" != "" ]; then
-    local VENV="[env:${VIRTUAL_ENV##*/}]"
+    local VENV="[env$SEPERATOR${VIRTUAL_ENV##*/}]"
     local PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
   else
     local VENV=""
@@ -244,6 +244,7 @@ set_prompt () {
 
   local REF="$(git branch 2>/dev/null | grep '^*' | colrm 1 2)"
   local REVNO="$(git rev-parse HEAD 2> /dev/null | cut -c1-7)"
+  local GIT_PROMPT_SIZE
   if [ "$REF" ]; then
     local GIT_DIRTY="$EX"
     local GIT_CLEAN="$CHECK"
@@ -253,13 +254,18 @@ set_prompt () {
     else
       GIT_STATUS="$GREEN$GIT_CLEAN"
     fi
-    local GIT_PROMPT="[git:$REF:$REVNO]"
-    local GIT_PROMPT_SIZE
-    ((GIT_PROMPT_SIZE=${#GIT_PROMPT}+6))
+    local GIT_PROMPT="[$GIT_START_FIN${SEPERATOR}git${SEPERATOR}$REF${SEPERATOR}$REVNO${SEPERATOR}$GIT_START_FIN]"
+    ((GIT_PROMPT_SIZE=${#GIT_PROMPT}))
+    VARS=($GIT_STATUS $GIT_ADDED $GIT_MODIFIED $GIT_DELETED $GIT_RENAMED $GIT_UNMERGED $GIT_UNTRACKED $GIT_DIVERGED $GIT_AHEAD $GIT_BEHIND $GIT_STASHED $GIT_UP_TO_DATE)
     local PS1_GIT="$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STATUS$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_YELLOW$GIT_START_FIN$RED]"
+    for i in "${VARS[@]}"
+    do
+      if [[ "$PS1_GIT" =~ "$i" ]]; then
+        ((GIT_PROMPT_SIZE+=1))
+      fi
+    done
   else
     local GIT_PROMPT=""
-    local GIT_PROMPT_SIZE
     ((GIT_PROMPT_SIZE=0))
     local PS1_GIT=""
   fi
