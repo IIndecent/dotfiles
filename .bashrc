@@ -147,7 +147,7 @@ else
 fi
 
 ###################
-## Set variables ##
+## PS1 variables ##
 ###################
 ## Colors ##
 RED="\[\e[0;31m\]"
@@ -176,17 +176,17 @@ EX="✗"
 CHECK="✔"
 SEPERATOR="ߦ"
 
-GIT_ADDED="$GREEN✚"
-GIT_MODIFIED="$DARK_BLUE✹"
-GIT_DELETED="$RED✖"
-GIT_RENAMED="$PURPLE➜"
-GIT_UNMERGED="$DARK_YELLOW═"
-GIT_UNTRACKED="$CYAN✭"
-GIT_DIVERGED="$BRIGHT_CYAN↕"
-GIT_AHEAD="$GREEN↑"
-GIT_BEHIND="$RED↓"
-GIT_STASHED="$DARK_YELLOW៙"
-GIT_UP_TO_DATE="$GREEN$CHECK"
+GIT_ADDED="\[$GREEN\]✚"
+GIT_MODIFIED="\[$DARK_BLUE\]✹"
+GIT_DELETED="\[$RED\]✖"
+GIT_RENAMED="\[$PURPLE\]➜"
+GIT_UNMERGED="\[$DARK_YELLOW\]═"
+GIT_UNTRACKED="\[$CYAN\]✭"
+GIT_DIVERGED="\[$BRIGHT_CYAN\]↕"
+GIT_AHEAD="\[$GREEN\]↑"
+GIT_BEHIND="\[$RED\]↓"
+GIT_STASHED="\[$DARK_YELLOW\]៙"
+GIT_UP_TO_DATE="\[$GREEN\]\[$CHECK\]"
 GIT_START_FIN="Ⲯ"
 
 alias grep='grep --color=auto'
@@ -221,43 +221,44 @@ OLD
 set_prompt () {
   local CMD=$?
   PS1=""
-  PS1+="$RED$TOP_CORNER$DASH$RED["
+  PS1+="\[$RED$TOP_CORNER$DASH$RED[\]"
 
   if [ $EUID == 0 ]; then
     local USR="root"
-    PS1+="$ROOT_RED"
+    PS1+="\[$ROOT_RED\]"
   else
-    local USR="$USER"
-    PS1+="$DARK_BLUE"
+    local USR="\[$USER\]"
+    PS1+="\[$DARK_BLUE\]"
   fi
-  PS1+="$USR"
+  PS1+="\[$USR\]"
 
-  PS1+="$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]"
+  PS1+="\[$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]\]"
 
   if [ "$VIRTUAL_ENV" != "" ]; then
-    local VENV="[env$SEPERATOR${VIRTUAL_ENV##*/}]"
-    local PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
+    local VENV="[env$SEPERATOR\[${VIRTUAL_ENV##*/}\]mk19m249240b
+    " ##
+    local PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE\[${VIRTUAL_ENV##*/}\]$RED]" ##
   else
     local VENV=""
     local PS1_VENV=""
   fi
 
-  local REF="$(git branch 2>/dev/null | grep '^*' | colrm 1 2)"
-  local REVNO="$(git rev-parse HEAD 2> /dev/null | cut -c1-7)"
+  local REF="\[$(git branch 2>/dev/null | grep '^*' | colrm 1 2)\]"
+  local REVNO="\[$(git rev-parse HEAD 2> /dev/null | cut -c1-7)\]"
   local GIT_PROMPT_SIZE
   if [ "$REF" ]; then
-    local GIT_DIRTY="$EX"
-    local GIT_CLEAN="$CHECK"
-    local GIT_STATUS=$(command git status --porcelain --ignore-submodules=dirty 2> /dev/null | tail -n1)
+    local GIT_DIRTY="\[$EX\]"
+    local GIT_CLEAN="\[$CHECK\]"
+    local GIT_STATUS="\[$(command git status --porcelain --ignore-submodules=dirty 2> /dev/null | tail -n1)\]"
     if [[ -n $GIT_STATUS ]]; then
-      GIT_STATUS="$RED$GIT_DIRTY"
+      GIT_STATUS="\[$RED$GIT_DIRTY\]"
     else
-      GIT_STATUS="$GREEN$GIT_CLEAN"
+      GIT_STATUS="\[$GREEN$GIT_CLEAN\]"
     fi
-    local GIT_PROMPT="[$GIT_START_FIN${SEPERATOR}git${SEPERATOR}$REF${SEPERATOR}$REVNO${SEPERATOR}$GIT_START_FIN]"
-    ((GIT_PROMPT_SIZE=${#GIT_PROMPT}))
+    local GIT_PROMPT="[$GIT_START_FIN${SEPERATOR}git${SEPERATOR}$REF${SEPERATOR}$REVNO${SEPERATOR}$GIT_START_FIN]" ##
+      ((GIT_PROMPT_SIZE=${#GIT_PROMPT}))
     VARS=($GIT_STATUS $GIT_ADDED $GIT_MODIFIED $GIT_DELETED $GIT_RENAMED $GIT_UNMERGED $GIT_UNTRACKED $GIT_DIVERGED $GIT_AHEAD $GIT_BEHIND $GIT_STASHED $GIT_UP_TO_DATE)
-    local PS1_GIT="$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STATUS$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_YELLOW$GIT_START_FIN$RED]"
+    local PS1_GIT="\[$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STATUS$DARK_YELLOW$SEPERATOR\[${CYAN}\]git$DARK_YELLOW$SEPERATOR$CYAN\[$REF\]$DARK_YELLOW$SEPERATOR$CYAN\[$REVNO\]$DARK_YELLOW$SEPERATOR\[$(git_status)\]$DARK_YELLOW$GIT_START_FIN$RED]\]" ##
     for i in "${VARS[@]}"
     do
       if [[ "$PS1_GIT" =~ "$i" ]]; then
@@ -266,11 +267,11 @@ set_prompt () {
     done
   else
     local GIT_PROMPT=""
-    ((GIT_PROMPT_SIZE=0))
+      ((GIT_PROMPT_SIZE=0))
     local PS1_GIT=""
   fi
 
-  local CUR_DIR="$TOP_CORNER$DASH[$USER@$HOSTNAME]$DASH[$(dirs)]"
+  local CUR_DIR="$TOP_CORNER$DASH[$USER@$HOSTNAME]$DASH[\[$(dirs)\]]" ##
   local PS_SIZE
   if [ "$VENV" ];then
     if [ "$GIT_PROMPT" ]; then
@@ -282,31 +283,31 @@ set_prompt () {
     ((PS_SIZE=${#CUR_DIR}+${#VENV}+2))
   fi
   local SPACE
-  ((SPACE=$COLUMNS - ($PS_SIZE + $GIT_PROMPT_SIZE)))
+    ((SPACE=$COLUMNS - ($PS_SIZE + $GIT_PROMPT_SIZE)))
   for ((i = 0; i < $SPACE; i++)); do
-    PS1+="$RED$DASH"
+    PS1+="\[$RED$DASH\]"
   done
 
-  PS1+="$PURPLE$PS1_VENV"
+  PS1+="\[$PURPLE$PS1_VENV\]"
   if [ "$VENV" ] && [ "$GIT_PROMPT" ]; then
-    PS1+="$RED$DASH"
+    PS1+="\[$RED$DASH\]"
   fi
 
-  PS1+="$PS1_GIT$DASH$BOX\n\r$RED$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED]$RED[$DARK_GRAY$(date '+%T')$RED]$DASH"
+  PS1+="\[\[$PS1_GIT\]$DASH$BOX\[\n\r\]$RED$BOT_CORNER$DASH[$DARK_GRAY\[$(date '+%a.%b.%d.%Y')\]$RED]$RED[$DARK_GRAY\[$(date '+%T')\]$RED]$DASH\]"
 
   if [[ $CMD == 0 ]]; then
-    PS1+="$GREEN[$CHECK]"
+    PS1+="\[$GREEN[$CHECK]\]"
   else
-    PS1+="$RED[$EX]"
+    PS1+="\[$RED[$EX]\]"
   fi
 
-  PS1+="$RED$DASH$ARROW $RESET"
+  PS1+="\[$RED$DASH$ARROW $RESET\]"
 }
 
 # Get the status of the working tree
 function git_status() {
   local INDEX STATUS
-  INDEX=$(command git status --porcelain -b 2> /dev/null)
+  INDEX="\[$(command git status --porcelain -b 2> /dev/null)\]"
   STATUS=""
   if $(echo "$INDEX" | command grep -E '^\?\? ' &> /dev/null); then
     STATUS="$GIT_UNTRACKED$STATUS"
@@ -355,7 +356,7 @@ function git_status() {
   if [ "$STATUS" == "" ]; then
     STATUS="$GIT_UP_TO_DATE$STATUS"
   fi
-  echo $STATUS
+  echo "\[$STATUS\]"
 }
 
 PROMPT_COMMAND='set_prompt'
