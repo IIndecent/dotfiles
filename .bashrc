@@ -232,11 +232,11 @@ set_prompt () {
     USR="$DARK_BLUE$USER"
   fi
 
-  CUR_DIR="$RED$TOP_CORNER$DASH$RED[$USER$DARK_YELLOW@$LIGHT_CYAN$HOSTNAME$RED]$DASH[$GREEN$(dirs)$RED]"
+  CUR_DIR="$RED$TOP_CORNER$DASH$RED[$USR$DARK_YELLOW@$LIGHT_CYAN$HOSTNAME$RED]$DASH[$GREEN$(dirs)$RED]"
   NEW_PS1="$CUR_DIR"
 
   if [ "$VIRTUAL_ENV" != "" ]; then
-    PS1_VENV="$RED[$PURPLEenv$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
+    PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
     VENV=$PS1_VENV
   else
     PS1_VENV=""
@@ -254,26 +254,23 @@ set_prompt () {
       GIT_STAT="$GREEN$GIT_CLEAN"
     fi
     PS1_GIT="$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STAT$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_YELLOW$GIT_START_FIN$RED]"
-    #GIT_PROMPT=$PS1_GIT
+    GIT_PROMPT="${PS1_GIT//\\\[}"
+    GIT_PROMPT="${GIT_PROMPT//\\\]}"
   else
-    #GIT_PROMPT=""
     PS1_GIT=""
   fi
-  echo $REF
-echo $REVNO
-    echo $PS1_GIT
 
+  ##  ##
   COLORS=("$RED" "$ROOT_RED" "$WHITE" "$LIGHT_YELLOW" "$DARK_YELLOW" "$DARK_BLUE" "$LIGHT_CYAN" "$BRIGHT_CYAN" "$CYAN" "$PURPLE" "$LIGHT_PURPLE" "$LIGHT_GRAY" "$DARK_GRAY" "$GREEN" "$RESET")
   for i in "${COLORS[@]}"
   do
-    GIT_PROMPT="${PS1_GIT//$i}"
+    i="${i//\\\[}"
+    i="${i//\\\]}"
+    GIT_PROMPT="${GIT_PROMPT//$i}"
     VENV="${VENV//$i}"
     CUR_DIR="${CUR_DIR//$i}"
   done
-    echo $GIT_PROMPT
   
-  GIT_PROMPT="${GIT_PROMPT//\\\[}"
-  GIT_PROMPT="${GIT_PROMPT//\\\]}"
   GIT_PROMPT="${GIT_PROMPT//\\}"
   VENV="${VENV//\\\[}"
   VENV="${VENV//\\\]}"
@@ -286,18 +283,18 @@ echo $REVNO
     PS1_VENV="$PS1_VENV$RED$DASH"
     VENV="$VENV$DASH"
   fi
-  echo $GIT_PROMPT
 
+  ## Add 2 because the trailing dash and box won't be added to the string until later ##
   local SPACE
     ((SPACE=$COLUMNS - (${#CUR_DIR} + ${#GIT_PROMPT} + ${#VENV} + 2)))
+  
   for ((i = 0; i < $SPACE; i++)); do
     FILLER_LINE+="$DASH"
   done
 
   NEW_PS1="$NEW_PS1$RED$FILLER_LINE$PS1_VENV"
 
-  NEW_PS1="$NEW_PS1$PS1_GIT$RED$DASH$BOX\n\r$RED$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH"
-  #NEW_PS1="$NEW_PS1$PS1_GIT$RED$DASH$BOX$RED$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH"
+  NEW_PS1="$NEW_PS1$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH"
 
   if [[ $CMD == 0 ]]; then
     CMD_RESULT="$GREEN[$CHECK]"
@@ -305,8 +302,8 @@ echo $REVNO
     CMD_RESULT="$RED[$EX]"
   fi
 
-  NEW_PS1="$NEW_PS1$CMD_RESULT$RED$DASH$ARROW \[$RESET\]"
-  PS1=$NEW_PS1
+  NEW_PS1="$NEW_PS1$CMD_RESULT$RED$DASH$ARROW $RESET"
+  PS1="$NEW_PS1"
 }
 
 # Get the status of the working tree
