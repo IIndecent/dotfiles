@@ -32,7 +32,6 @@ ZSH_THEME="indecent/indecent"
 #ZSH_THEME="xiong-chiamiov-plus"
 #ZSH_THEME="zhann"
 
-
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
@@ -372,3 +371,8 @@ alias rm='rm -i'
 
 ## set some other defaults ##
 alias df='df -H'
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
+
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"

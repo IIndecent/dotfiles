@@ -1,4 +1,5 @@
-#neofetch
+## Reset path ##
+PATH=$(getconf PATH)
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -105,33 +106,12 @@ elif [ -f /etc/debian_version ]; then
     OS=Debian
     VER=$(cat /etc/debian_version)
     export COMPUTERNAME=$(hostname)
-else
+elseb
     # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
     OS=$(uname -s)
     VER=$(uname -r)
     export COMPUTERNAME=$(hostname)
 fi
-
-########################
-## Virtualenv loading ##
-########################
-
-## PYTHON ##
-export PYTHONPATH=$PYTHONPATH:"/usr/bin/python3"
-export VIRTUALENVWRAPPER_PYTHON="/usr/bin/python3"
-export WORKON_HOME=$HOME/.virtualenvs
-export PROJECT_HOME=$HOME/Documents/projects
-if [ $EUID != 0 ]; then
-  if [ -d "$HOME/.local" ]; then
-    if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
-      source $HOME/.local/bin/virtualenvwrapper.sh
-    fi
-  fi
-fi
-
-## RUBY ##
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
 
 ################
 ## WINEPREFIX ##
@@ -192,29 +172,15 @@ LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207';
 #######################
 ## PS1 configuration ##
 #######################
-<<OLD
-if [ "$color_prompt" = yes ]; then
-    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]')$RED$DASH> $DARK_YELLOW$ $RESET"
-else
-    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\$([[ \$? != 0 ]] && echo -e '$RED[$EX]')$RED$DASH> $DARK_YELLOW$ $RESET"
-fi
-unset color_prompt force_color_prompt
-
-## If this is an xterm set the title to user@host:dir ##
-case "$TERM" in
-xterm*|rxvt*)
-    PS1="$RED$TOP_CORNER$DASH$RED[\[$(if [[ ${EUID} == 0 ]]; then echo -e $ROOT_RED'root'; else echo -e $DARK_BLUE$USER; fi)$DARK_YELLOW@$LIGHT_CYAN\h$RED]$RED$DASH[$GREEN\w$RED]${WHITE}\[\$(virtual_env)\]$DARK_YELLOW\[\$(git_branch)\]\n\r$RED$BOT_CORNER$DASH\[$(if [[ ${?} == 0 ]]; then echo $RED[$EX]; else echo $GREEN[$CHECK]; fi)$RED$DASH> $DARK_YELLOW$ $RESET"
-    ;;
-*)
-    ;;
-esac
-OLD
 
 set_prompt () {
+  ## Set local variables and clear PS1 ##
   local CMD=$?
-  local VENV
+  local PY_VENV
+  local RB_VENV
+  local PS1_PY_VENV
+  local PS1_RB_VENV
   local CUR_DIR
-  local PS1_VENV
   local USR
   local FILLER_LINE
   local CMD_RESULT
@@ -224,24 +190,38 @@ set_prompt () {
   local GIT_CLEAN
   local GIT_DIRTY
   local GIT_STATUS
-  NEW_PS1=""
+  PS1=""
 
+  ## Get the user ##
   if [ $EUID == 0 ]; then
-    USR="$ROOT_REDroot"
+    USR="$ROOT_RED$USER"
   else
     USR="$DARK_BLUE$USER"
   fi
 
+  ## Add username, hostname, and working directory to PS1 ##
   CUR_DIR="$RED$TOP_CORNER$DASH$RED[$USR$DARK_YELLOW@$LIGHT_CYAN$HOSTNAME$RED]$DASH[$GREEN$(dirs)$RED]"
-  NEW_PS1="$CUR_DIR"
+  PS1+="$CUR_DIR"
 
+  ## Python virtual environment ##
   if [ "$VIRTUAL_ENV" != "" ]; then
-    PS1_VENV="$RED[${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
-    VENV=$PS1_VENV
+    PS1_PY_VENV="$RED[${PURPLE}py$DARK_YELLOW$SEPERATOR${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
   else
-    PS1_VENV=""
+    PS1_PY_VENV=""
   fi
+  PY_VENV=$PS1_PY_VENV
 
+  ## Ruby virtual environment ##
+  if [ "$GEM_HOME" != "" ]; then
+    GEMSET=$(rvm gemset list | grep '^=> ')
+    GEMSET=${GEMSET//"=> "}
+    PS1_RB_VENV="$RED[${PURPLE}rb$DARK_YELLOW$SEPERATOR${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${GEM_HOME##*/}$DARK_YELLOW$SEPERATOR$PURPLE$GEMSET$RED]"
+  else
+    PS1_RB_VENV=""
+  fi
+  RB_VENV=$PS1_RB_VENV
+
+  ## Git branch, head, and status ##
   local REF=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
   local REVNO=$(git rev-parse HEAD 2> /dev/null | cut -c1-7)
   if [ "$REF" ]; then
@@ -260,53 +240,64 @@ set_prompt () {
     PS1_GIT=""
   fi
 
-  ##  ##
+  ## Remove color codes from variables to get accurate length of the strings ##
+  ## Do this so that the dashes can be drawn across the first line accurately ##
   COLORS=("$RED" "$ROOT_RED" "$WHITE" "$LIGHT_YELLOW" "$DARK_YELLOW" "$DARK_BLUE" "$LIGHT_CYAN" "$BRIGHT_CYAN" "$CYAN" "$PURPLE" "$LIGHT_PURPLE" "$LIGHT_GRAY" "$DARK_GRAY" "$GREEN" "$RESET")
   for i in "${COLORS[@]}"
   do
     i="${i//\\\[}"
     i="${i//\\\]}"
     GIT_PROMPT="${GIT_PROMPT//$i}"
-    VENV="${VENV//$i}"
+    PY_VENV="${PY_VENV//$i}"
+    RB_VENV="${RB_VENV//$i}"
     CUR_DIR="${CUR_DIR//$i}"
   done
   
+  ## Escapes in color codes need to be removed seperately ##
+  ## This will also unintentionally remove any backslach (\) in environment names ##
   GIT_PROMPT="${GIT_PROMPT//\\}"
-  VENV="${VENV//\\\[}"
-  VENV="${VENV//\\\]}"
-  VENV="${VENV//\\}"
+  PY_VENV="${PY_VENV//\\\[}"
+  PY_VENV="${PY_VENV//\\\]}"
+  PY_VENV="${PY_VENV//\\}"
+  RB_VENV="${RB_VENV//\\\[}"
+  RB_VENV="${RB_VENV//\\\]}"
+  RB_VENV="${RB_VENV//\\}"
   CUR_DIR="${CUR_DIR//\\\[}"
   CUR_DIR="${CUR_DIR//\\\]}"
   CUR_DIR="${CUR_DIR//\\}"
 
-  if [ "$VENV" ] && [ "$GIT_PROMPT" ]; then
-    PS1_VENV="$PS1_VENV$RED$DASH"
-    VENV="$VENV$DASH"
+  ## Add a dash after Python virtual environment if there is Git information to follow ##
+  if [ "$PY_VENV" ] && [ "$GIT_PROMPT" ]; then
+    PS1_PY_VENV="$PS1_PY_VENV$RED$DASH"
+    PY_VENV="$PY_VENV$DASH"
   fi
 
+  ## Add a dash after Ruby virtual environment if there is Git information to follow ##
+  if [ "$RB_VENV" ] && ([ "$GIT_PROMPT" ] || [ "$PY_VENV" ]); then
+    PS1_RB_VENV="$PS1_RB_VENV$RED$DASH"
+    RB_VENV="$RB_VENV$DASH"
+  fi
+
+  ## Subtract the length of the strings in the first line to know how many dashes to add ##
   ## Add 2 because the trailing dash and box won't be added to the string until later ##
   local SPACE
-    ((SPACE=$COLUMNS - (${#CUR_DIR} + ${#GIT_PROMPT} + ${#VENV} + 2)))
-  
+    ((SPACE=$COLUMNS - (${#CUR_DIR} + ${#GIT_PROMPT} + ${#PY_VENV} + ${#RB_VENV} + 2)))
   for ((i = 0; i < $SPACE; i++)); do
     FILLER_LINE+="$DASH"
   done
 
-  NEW_PS1="$NEW_PS1$RED$FILLER_LINE$PS1_VENV"
-
-  NEW_PS1="$NEW_PS1$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH"
-
+  ## Determine if the previous command was successful or not, and alert accordingly ##
   if [[ $CMD == 0 ]]; then
     CMD_RESULT="$GREEN[$CHECK]"
   else
     CMD_RESULT="$RED[$EX]"
   fi
 
-  NEW_PS1="$NEW_PS1$CMD_RESULT$RED$DASH$ARROW $RESET"
-  PS1="$NEW_PS1"
+  ## Add strings to PS1 ##
+  PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW $RESET"
 }
 
-# Get the status of the working tree
+## Get the status of the working tree ##
 function git_status() {
   local INDEX STATUS
   INDEX="\[$(command git status --porcelain -b 2> /dev/null)\]"
@@ -336,10 +327,14 @@ function git_status() {
   if $(echo "$INDEX" | grep '^ D ' &> /dev/null); then
     STATUS="$GIT_DELETED$STATUS"
   elif $(echo "$INDEX" | grep '^D  ' &> /dev/null); then
-    STATUS="$GIT_DELETED$STATUS"
-  elif $(echo "$INDEX" | grep '^AD ' &> /dev/null); then
-    STATUS="$GIT_DELETED$STATUS"
+    
+
+  el
+
+    
+
   fi
+
   if $(command git rev-parse --verify refs/stash >/dev/null 2>&1); then
     STATUS="$GIT_STASHED$STATUS"
   fi
@@ -384,6 +379,23 @@ fi
 # sources /etc/bash.bashrc).
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
   . /etc/bash_completion
+fi
+
+########################
+## Virtualenv loading ##
+########################
+
+## PYTHON ##
+export PYTHONPATH=$PYTHONPATH:"/usr/bin/python3"
+export VIRTUALENVWRAPPER_PYTHON="/usr/bin/python3"
+export WORKON_HOME=$HOME/.virtualenvs
+export PROJECT_HOME=$HOME/Documents/projects
+if [ $EUID != 0 ]; then
+  if [ -d "$HOME/.local" ]; then
+    if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
+      source $HOME/.local/bin/virtualenvwrapper.sh
+    fi
+  fi
 fi
 
 # Eternal bash history.
@@ -478,9 +490,9 @@ alias matrix='cmatrix -a -C magenta'
 alias matrixr='cmatrix -a -r'
 # if there is no bash profile, we don't want to source it.
 if [ -f ~/.profile ]; then
-  alias resh='source ~/.bashrc && source ~/.profile'
+  alias resh='source $HOME/.bashrc && source $HOME/.profile'
 else
-  alias resh='source ~/.bashrc'
+  alias resh='source $HOME/.bashrc'
 fi
 
 ## Shortcuts ##
