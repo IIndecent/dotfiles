@@ -1,8 +1,16 @@
-## Reset path ##
-PATH=$(getconf PATH)
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
+
+## RVM is a bit of a pain... Save this variable later so it can be prepended to PATH ##
+GEM_HOME_OLD=""
+[[ "$GEM_HOME" ]] && GEM_HOME_OLD="$GEM_HOME/bin"
+
+VIRTUAL_ENV_OLD=""
+[[ "$VIRTUAL_ENV" ]] && VIRTUAL_ENV_OLD="$VIRTUAL_ENV/bin"
+
+## Reset path because that can get ugly ##
+PATH=$(getconf PATH)
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -122,8 +130,9 @@ export WINEPREFIX=~/.wine
 ## PS1 variables ##
 ###################
 ## Colors ##
-RED="\[\e[0;31m\]"
+LIGHT_RED="\[\e[00;31m\]"
 ROOT_RED="\[\e[01;31m\]"
+RED="\[\e[00;91m\]"
 WHITE="\[\e[0;37m\]"
 LIGHT_YELLOW="\[\e[01;33m\]"
 DARK_YELLOW="\[\e[38;5;214m\]"
@@ -136,7 +145,7 @@ LIGHT_PURPLE="\[\e[01;35m\]"
 LIGHT_GRAY="\[\e[00;37m\]"
 DARK_GRAY="\[\e[01;30m\]"
 GREEN="\[\e[0;32m\]"
-RESET="\[\e[00m\]"
+RESET="\[\e[01;39m\]"
 
 ## Symbols ##
 DASH="─"
@@ -146,7 +155,10 @@ ARROW="▶"
 BOX="╼"
 EX="✗"
 CHECK="✔"
-SEPERATOR="ߦ"
+SEPERATOR="ᛃ"
+RB_START_FIN="ߦ"
+PY_START_FIN="ꛜ"
+GIT_START_FIN="Ⲯ"
 
 GIT_ADDED="$GREEN✚"
 GIT_MODIFIED="$DARK_BLUE✹"
@@ -159,7 +171,6 @@ GIT_AHEAD="$GREEN↑"
 GIT_BEHIND="$RED↓"
 GIT_STASHED="$DARK_YELLOW៙"
 GIT_UP_TO_DATE="$GREEN$CHECK"
-GIT_START_FIN="Ⲯ"
 
 alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
@@ -174,6 +185,11 @@ LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207';
 #######################
 
 set_prompt () {
+  ## Tossing this in here because RVM is a shitbox and can't act right ##
+  ## If it's not the first variable path in PATH it throws it's ass... ##
+  PATH=${PATH//$GEM_HOME_OLD}
+  PATH="$GEM_HOME_OLD:$PATH"
+
   ## Set local variables and clear PS1 ##
   local CMD=$?
   local PY_VENV
@@ -205,7 +221,7 @@ set_prompt () {
 
   ## Python virtual environment ##
   if [ "$VIRTUAL_ENV" != "" ]; then
-    PS1_PY_VENV="$RED[${PURPLE}py$DARK_YELLOW$SEPERATOR${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$RED]"
+    PS1_PY_VENV="$RED[$DARK_GRAY$PY_START_FIN$RED${PURPLE}py$DARK_YELLOW$SEPERATOR${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${VIRTUAL_ENV##*/}$DARK_GRAY$PY_START_FIN$RED$RED]"
   else
     PS1_PY_VENV=""
   fi
@@ -215,7 +231,7 @@ set_prompt () {
   if [ "$GEM_HOME" != "" ]; then
     GEMSET=$(rvm gemset list | grep '^=> ')
     GEMSET=${GEMSET//"=> "}
-    PS1_RB_VENV="$RED[${PURPLE}rb$DARK_YELLOW$SEPERATOR${PURPLE}env$DARK_YELLOW$SEPERATOR$PURPLE${GEM_HOME##*/}$DARK_YELLOW$SEPERATOR$PURPLE$GEMSET$RED]"
+    PS1_RB_VENV="$RED[$DARK_GRAY$RB_START_FIN$RED${LIGHT_RED}rb$DARK_YELLOW$SEPERATOR${LIGHT_RED}env$DARK_YELLOW$SEPERATOR$LIGHT_RED${GEM_HOME##*/}$DARK_YELLOW$SEPERATOR$LIGHT_RED$GEMSET$DARK_GRAY$RB_START_FIN$RED]"
   else
     PS1_RB_VENV=""
   fi
@@ -233,7 +249,7 @@ set_prompt () {
     else
       GIT_STAT="$GREEN$GIT_CLEAN"
     fi
-    PS1_GIT="$RED[$DARK_YELLOW$GIT_START_FIN$GIT_STAT$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_YELLOW$GIT_START_FIN$RED]"
+    PS1_GIT="$RED[$DARK_GRAY$GIT_START_FIN$GIT_STAT$DARK_YELLOW$SEPERATOR${CYAN}git$DARK_YELLOW$SEPERATOR$CYAN$REF$DARK_YELLOW$SEPERATOR$CYAN$REVNO$DARK_YELLOW$SEPERATOR$(git_status)$DARK_GRAY$GIT_START_FIN$RED]"
     GIT_PROMPT="${PS1_GIT//\\\[}"
     GIT_PROMPT="${GIT_PROMPT//\\\]}"
   else
@@ -242,7 +258,7 @@ set_prompt () {
 
   ## Remove color codes from variables to get accurate length of the strings ##
   ## Do this so that the dashes can be drawn across the first line accurately ##
-  COLORS=("$RED" "$ROOT_RED" "$WHITE" "$LIGHT_YELLOW" "$DARK_YELLOW" "$DARK_BLUE" "$LIGHT_CYAN" "$BRIGHT_CYAN" "$CYAN" "$PURPLE" "$LIGHT_PURPLE" "$LIGHT_GRAY" "$DARK_GRAY" "$GREEN" "$RESET")
+  COLORS=("$LIGHT_RED" "$RED" "$ROOT_RED" "$WHITE" "$LIGHT_YELLOW" "$DARK_YELLOW" "$DARK_BLUE" "$LIGHT_CYAN" "$BRIGHT_CYAN" "$CYAN" "$PURPLE" "$LIGHT_PURPLE" "$LIGHT_GRAY" "$DARK_GRAY" "$GREEN" "$RESET")
   for i in "${COLORS[@]}"
   do
     i="${i//\\\[}"
@@ -297,10 +313,10 @@ set_prompt () {
   PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW $RESET"
 }
 
-## Get the status of the working tree ##
-function git_status() {
+# Get the status of the working tree
+function git_prompt_status() {
   local INDEX STATUS
-  INDEX="\[$(command git status --porcelain -b 2> /dev/null)\]"
+  INDEX=$(command git status --porcelain -b 2> /dev/null)
   STATUS=""
   if $(echo "$INDEX" | command grep -E '^\?\? ' &> /dev/null); then
     STATUS="$GIT_UNTRACKED$STATUS"
@@ -327,14 +343,10 @@ function git_status() {
   if $(echo "$INDEX" | grep '^ D ' &> /dev/null); then
     STATUS="$GIT_DELETED$STATUS"
   elif $(echo "$INDEX" | grep '^D  ' &> /dev/null); then
-    
-
-  el
-
-    
-
+    STATUS="$GIT_DELETED$STATUS"
+  elif $(echo "$INDEX" | grep '^AD ' &> /dev/null); then
+    STATUS="$GIT_DELETED$STATUS"
   fi
-
   if $(command git rev-parse --verify refs/stash >/dev/null 2>&1); then
     STATUS="$GIT_STASHED$STATUS"
   fi
@@ -350,10 +362,7 @@ function git_status() {
   if $(echo "$INDEX" | grep '^## [^ ]\+ .*diverged' &> /dev/null); then
     STATUS="$GIT_DIVERGED$STATUS"
   fi
-  if [ "$STATUS" == "" ]; then
-    STATUS="$GIT_UP_TO_DATE$STATUS"
-  fi
-  echo "$STATUS"
+  echo $STATUS
 }
 
 PROMPT_COMMAND='set_prompt'
@@ -489,11 +498,12 @@ alias tclock='tty-clock -s -c -t -n -C 5'
 alias matrix='cmatrix -a -C magenta'
 alias matrixr='cmatrix -a -r'
 # if there is no bash profile, we don't want to source it.
-if [ -f ~/.profile ]; then
-  alias resh='source $HOME/.bashrc && source $HOME/.profile'
-else
-  alias resh='source $HOME/.bashrc'
-fi
+function resh {
+  if [ -f ~/.profile ]; then
+    source $HOME/.profile
+  fi
+  source $HOME/.bashrc
+}
 
 ## Shortcuts ##
 alias c='clear'
@@ -567,3 +577,15 @@ alias rm='rm -i'
 
 ## set some other defaults ##
 alias df='df -H'
+
+PATH="${PATH//$VIRTUAL_ENV_OLD}"
+
+###**##################################################**###
+## **                IF YOU USE RVM:                   ** ##
+## ** REMOVE THIS LINE FROM .profile AND .bash_profile ** ##
+## **       OTHERWISE WARNING WILL PERSIST!!           ** ##
+###**##################################################**###
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$GEM_HOME_OLD:$VIRTUAL_ENV_OLD:$PATH:$HOME/.rvm/bin"
+
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
