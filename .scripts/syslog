@@ -1,0 +1,4 @@
+#!/bin/bash
+
+## Display occurences of arg from syslog ##
+grep $1 /var/log/syslog

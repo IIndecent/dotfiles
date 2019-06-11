@@ -13,6 +13,9 @@ VIRTUAL_ENV_OLD=""
 ## Reset path because that can get ugly ##
 PATH=$(getconf PATH)
 
+## Load scripts ##
+export PATH="$PATH:$HOME/.scripts"
+
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
@@ -129,53 +132,6 @@ fi
 ################
 export WINEPREFIX=~/.wine
 
-###################
-## PS1 variables ##
-###################
-## Colors ##
-LIGHT_RED="\[\e[00;31m\]"
-ROOT_RED="\[\e[01;31m\]"
-RED="\[\e[00;91m\]"
-WHITE="\[\e[0;37m\]"
-LIGHT_YELLOW="\[\e[01;33m\]"
-DARK_YELLOW="\[\e[38;5;214m\]"
-DARK_BLUE="\[\e[38;5;24m\]"
-LIGHT_CYAN="\[\e[01;96m\]"
-BRIGHT_CYAN="\[\e[01;36m\]"
-CYAN="\[\e[0;36m\]"
-PURPLE="\[\e[0;35m\]"
-LIGHT_PURPLE="\[\e[01;35m\]"
-LIGHT_GRAY="\[\e[00;37m\]"
-DARK_GRAY="\[\e[01;30m\]"
-GREEN="\[\e[0;32m\]"
-RESET="\[\e[01;39m\]"
-
-## Symbols ##
-DASH="─"
-TOP_CORNER="┌"
-BOT_CORNER="└"
-ARROW="▶"
-BOX="╼"
-EX="✗"
-CHECK="✔"
-SEPERATOR="ᛃ"
-RB_START_FIN="ߦ"
-PY_START_FIN="ꛜ"
-GIT_START_FIN="Ⲯ"
-
-## Git status symbols ##
-GIT_ADDED="$GREEN✚"
-GIT_MODIFIED="$DARK_BLUE✹"
-GIT_DELETED="$RED✖"
-GIT_RENAMED="$PURPLE➜"
-GIT_UNMERGED="$DARK_YELLOW═"
-GIT_UNTRACKED="$CYAN✭"
-GIT_DIVERGED="$BRIGHT_CYAN↕"
-GIT_AHEAD="$GREEN↑"
-GIT_BEHIND="$RED↓"
-GIT_STASHED="$DARK_YELLOW៙"
-GIT_UP_TO_DATE="$GREEN$CHECK"
-
 ## ls colors ##
 LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207'; export LS_COLORS
 
@@ -184,6 +140,50 @@ LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207';
 #######################
 
 set_prompt () {
+  ## Colors ##
+  local LIGHT_RED="\[\e[00;31m\]"
+  local ROOT_RED="\[\e[01;31m\]"
+  local RED="\[\e[00;91m\]"
+  local WHITE="\[\e[0;37m\]"
+  local LIGHT_YELLOW="\[\e[01;33m\]"
+  local DARK_YELLOW="\[\e[38;5;214m\]"
+  local DARK_BLUE="\[\e[38;5;24m\]"
+  local LIGHT_CYAN="\[\e[01;96m\]"
+  local BRIGHT_CYAN="\[\e[01;36m\]"
+  local CYAN="\[\e[0;36m\]"
+  local PURPLE="\[\e[0;35m\]"
+  local LIGHT_PURPLE="\[\e[01;35m\]"
+  local LIGHT_GRAY="\[\e[00;37m\]"
+  local DARK_GRAY="\[\e[01;30m\]"
+  local GREEN="\[\e[0;32m\]"
+  local RESET="\[\e[01;39m\]"
+
+  ## Symbols ##
+  local DASH="─"
+  local TOP_CORNER="┌"
+  local BOT_CORNER="└"
+  local ARROW="▶"
+  local BOX="╼"
+  local EX="✗"
+  local CHECK="✔"
+  local SEPERATOR="ᛃ"
+  local RB_START_FIN="ߦ"
+  local PY_START_FIN="ꛜ"
+  local GIT_START_FIN="Ⲯ"
+
+  ## Git status symbols ##
+  local GIT_ADDED="$GREEN✚"
+  local GIT_MODIFIED="$DARK_BLUE✹"
+  local GIT_DELETED="$RED✖"
+  local GIT_RENAMED="$PURPLE➜"
+  local GIT_UNMERGED="$DARK_YELLOW═"
+  local GIT_UNTRACKED="$CYAN✭"
+  local GIT_DIVERGED="$BRIGHT_CYAN↕"
+  local GIT_AHEAD="$GREEN↑"
+  local GIT_BEHIND="$RED↓"
+  local GIT_STASHED="$DARK_YELLOW៙"
+  local GIT_UP_TO_DATE="$GREEN$CHECK"
+
   ## This variable needs to be set first to enusre accurate alert ##
   local CMD=$?
 
@@ -388,51 +388,6 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
   . /etc/bash_completion
 fi
 
-###############
-## Functions ##
-###############
-
-## Restart network interface connection ##
-function ifrestart {
-  if [ $1 ]; then
-    sudo ifconfig $1 down && sleep 10 && sudo ifconfig $1 up
-  else
-    echo "This command requires an interface name"
-  fi
-}
-
-## Probe address for open ports ##
-##   Or probe a specific port   ##
-## probe [address] [port-range] ##
-function probe {
-  if [ $1 ]; then
-    if [ $2 ]; then
-      nc -zv $1 $2 2>&1 | grep succeeded
-    else
-      echo "missing second arg"
-    fi
-  else
-    echo "no args passed"
-  fi
-}
-
-## Display ports used by program [arg1] ##
-function psport {
-	sudo netstat -tulnp | grep $1
-}
-
-## Display occurences of arg from syslog ##
-function syslog {
-	grep $1 /var/log/syslog
-}
-## if there is no bash profile, we don't want to source it. ##
-function resh {
-  if [ -f ~/.profile ]; then
-    source $HOME/.profile
-  fi
-  source $HOME/.bashrc
-}
-
 ####################
 ## Custom aliases ##
 ####################
@@ -518,6 +473,9 @@ alias ping='ping -c 5'
 ## Do not wait interval 1 second, go fast ##
 alias fastping='ping -c 100 -s.2'
 alias ports='netstat -tulanp'
+
+## Display ports used by program ##
+alias psport='sudo netstat -tulnp | grep'
 
 ## do not delete / or prompt if deleting more than 3 files at a time ##
 alias rm='rm -I --preserve-root'

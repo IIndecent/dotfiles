@@ -1,0 +1,15 @@
+#!/bin/bash
+
+## Probe address for open ports ##
+##   Or probe a specific port   ##
+## probe [address] [port-range] ##
+
+if [ $1 ]; then
+    if [ $2 ]; then
+      nc -zv $1 $2 2>&1 | grep succeeded
+    else
+      echo "missing second arg"
+    fi
+  else
+    echo "no args passed"
+  fi
