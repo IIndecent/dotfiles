@@ -6,6 +6,7 @@
 GEM_HOME_OLD=""
 [[ "$GEM_HOME" ]] && GEM_HOME_OLD="$GEM_HOME/bin"
 
+## Need to hold Python virtual env for it to be appended somewhere after RVM path ##
 VIRTUAL_ENV_OLD=""
 [[ "$VIRTUAL_ENV" ]] && VIRTUAL_ENV_OLD="$VIRTUAL_ENV/bin"
 
@@ -25,6 +26,22 @@ shopt -s histappend
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=10000000
 HISTFILESIZE=2000000
+
+# Eternal bash history.
+# ---------------------
+# Undocumented feature which sets the size to "unlimited".
+# http://stackoverflow.com/questions/9457233/unlimited-bash-history
+#export HISTFILESIZE=
+#export HISTSIZE=
+#export HISTTIMEFORMAT="[%F %T] "
+# Change the file location because certain bash sessions truncate .bash_history file upon close.
+# http://superuser.com/questions/575479/bash-history-truncated-to-500-lines-on-each-login
+#export HISTFILE=~/.bash_eternal_history
+# Force prompt to write history after every command.
+# http://superuser.com/questions/20900/bash-history-loss
+#PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+
+export HISTTIMEFORMAT="%d/%m/%y %T "
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -49,14 +66,15 @@ esac
 #force_color_prompt=yes
 
 if [ -n "$force_color_prompt" ]; then
-    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-      # We have color support; assume it's compliant with Ecma-48
-      # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-      # a case would tend to support setf rather than setaf.)
-      color_prompt=yes
-    else
-      color_prompt=
-    fi
+  if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+    # We have color support; assume it's compliant with Ecma-48
+    # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+    # a case would tend to support setf rather than setaf.)
+    color_prompt=yes
+  else
+    color_prompt=
+  fi
+fi
 ###################################
 ## Find out what distro we're on ##
 ###################################
@@ -88,37 +106,22 @@ else
     VER=$(uname -r)
     export COMPUTERNAME=$(hostname)
 fi
-fi
-###################################
-## Find out what distro we're on ##
-###################################
-if [ -f /etc/os-release ]; then
-    # freedesktop.org and systemd
-    . /etc/os-release
-    OS=$NAME
-    VER=$VERSION_ID
-    export COMPUTERNAME=$(hostname)
-elif type lsb_release >/dev/null 2>&1; then
-    # linuxbase.org
-    OS=$(lsb_release -si)
-    VER=$(lsb_release -sr)
-    export COMPUTERNAME=$(hostname)
-elif [ -f /etc/lsb-release ]; then
-    # For some versions of Debian/Ubuntu without lsb_release command
-    . /etc/lsb-release
-    OS=$DISTRIB_ID
-    VER=$DISTRIB_RELEASE
-    export COMPUTERNAME=$(hostname)
-elif [ -f /etc/debian_version ]; then
-    # Older Debian/Ubuntu/etc.
-    OS=Debian
-    VER=$(cat /etc/debian_version)
-    export COMPUTERNAME=$(hostname)
-elseb
-    # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
-    OS=$(uname -s)
-    VER=$(uname -r)
-    export COMPUTERNAME=$(hostname)
+
+########################
+## Virtualenv loading ##
+########################
+
+## PYTHON ##
+export PYTHONPATH=$PYTHONPATH:"/usr/bin/python3"
+export VIRTUALENVWRAPPER_PYTHON="/usr/bin/python3"
+export WORKON_HOME=$HOME/.virtualenvs
+export PROJECT_HOME=$HOME/Documents/projects
+if [ $EUID != 0 ]; then
+  if [ -d "$HOME/.local" ]; then
+    if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
+      source $HOME/.local/bin/virtualenvwrapper.sh
+    fi
+  fi
 fi
 
 ################
@@ -160,6 +163,7 @@ RB_START_FIN="ߦ"
 PY_START_FIN="ꛜ"
 GIT_START_FIN="Ⲯ"
 
+## Git status symbols ##
 GIT_ADDED="$GREEN✚"
 GIT_MODIFIED="$DARK_BLUE✹"
 GIT_DELETED="$RED✖"
@@ -172,11 +176,6 @@ GIT_BEHIND="$RED↓"
 GIT_STASHED="$DARK_YELLOW៙"
 GIT_UP_TO_DATE="$GREEN$CHECK"
 
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-alias ls='ls --color=auto'
-
 ## ls colors ##
 LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207'; export LS_COLORS
 
@@ -185,17 +184,19 @@ LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207';
 #######################
 
 set_prompt () {
+  ## This variable needs to be set first to enusre accurate alert ##
+  local CMD=$?
+
   ## Tossing this in here because RVM is a shitbox and can't act right ##
   ## If it's not the first variable path in PATH it throws it's ass... ##
   PATH=${PATH//$GEM_HOME_OLD}
   PATH="$GEM_HOME_OLD:$PATH"
 
   ## Set local variables and clear PS1 ##
-  local CMD=$?
-  local PY_VENV
-  local RB_VENV
-  local PS1_PY_VENV
-  local PS1_RB_VENV
+  local PY_VENV=""
+  local RB_VENV=""
+  local PS1_PY_VENV=""
+  local PS1_RB_VENV=""
   local CUR_DIR
   local USR
   local FILLER_LINE
@@ -207,6 +208,7 @@ set_prompt () {
   local GIT_DIRTY
   local GIT_STATUS
   PS1=""
+
 
   ## Get the user ##
   if [ $EUID == 0 ]; then
@@ -314,7 +316,7 @@ set_prompt () {
 }
 
 # Get the status of the working tree
-function git_prompt_status() {
+function git_status() {
   local INDEX STATUS
   INDEX=$(command git status --porcelain -b 2> /dev/null)
   STATUS=""
@@ -367,10 +369,6 @@ function git_prompt_status() {
 
 PROMPT_COMMAND='set_prompt'
 
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo -e terminal || echo -e error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
 # Alias definitions.
 # You may want to put all your additions into a separate file like
 # ~/.bash_aliases, instead of adding them here directly.
@@ -389,37 +387,6 @@ fi
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
   . /etc/bash_completion
 fi
-
-########################
-## Virtualenv loading ##
-########################
-
-## PYTHON ##
-export PYTHONPATH=$PYTHONPATH:"/usr/bin/python3"
-export VIRTUALENVWRAPPER_PYTHON="/usr/bin/python3"
-export WORKON_HOME=$HOME/.virtualenvs
-export PROJECT_HOME=$HOME/Documents/projects
-if [ $EUID != 0 ]; then
-  if [ -d "$HOME/.local" ]; then
-    if [ -f "$HOME/.local/bin/virtualenvwrapper.sh" ]; then
-      source $HOME/.local/bin/virtualenvwrapper.sh
-    fi
-  fi
-fi
-
-# Eternal bash history.
-# ---------------------
-# Undocumented feature which sets the size to "unlimited".
-# http://stackoverflow.com/questions/9457233/unlimited-bash-history
-#export HISTFILESIZE=
-#export HISTSIZE=
-#export HISTTIMEFORMAT="[%F %T] "
-# Change the file location because certain bash sessions truncate .bash_history file upon close.
-# http://superuser.com/questions/575479/bash-history-truncated-to-500-lines-on-each-login
-#export HISTFILE=~/.bash_eternal_history
-# Force prompt to write history after every command.
-# http://superuser.com/questions/20900/bash-history-loss
-#PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
 ###############
 ## Functions ##
@@ -458,6 +425,17 @@ function psport {
 function syslog {
 	grep $1 /var/log/syslog
 }
+## if there is no bash profile, we don't want to source it. ##
+function resh {
+  if [ -f ~/.profile ]; then
+    source $HOME/.profile
+  fi
+  source $HOME/.bashrc
+}
+
+####################
+## Custom aliases ##
+####################
 
 ## Package management shit ##
 ## Dependent on distribution ##
@@ -481,11 +459,14 @@ elif [ "$OS" == "Raspbian GNU/Linux" ]; then
   alias ar='sudo apt-get remove -y --purge'
 fi
 
-export HISTTIMEFORMAT="%d/%m/%y %T "
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias ls='ls --color=auto'
 
-####################
-## Custom aliases ##
-####################
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo -e terminal || echo -e error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 ## Do things ##
 alias fsearch='flatpak search'
@@ -497,13 +478,6 @@ alias wine='wine 2>~/.wine.error.log'
 alias tclock='tty-clock -s -c -t -n -C 5'
 alias matrix='cmatrix -a -C magenta'
 alias matrixr='cmatrix -a -r'
-# if there is no bash profile, we don't want to source it.
-function resh {
-  if [ -f ~/.profile ]; then
-    source $HOME/.profile
-  fi
-  source $HOME/.bashrc
-}
 
 ## Shortcuts ##
 alias c='clear'
@@ -578,6 +552,7 @@ alias rm='rm -i'
 ## set some other defaults ##
 alias df='df -H'
 
+## Remove Python virtual environment from path so it's not added multiple times. ##
 PATH="${PATH//$VIRTUAL_ENV_OLD}"
 
 ###**##################################################**###
@@ -585,7 +560,13 @@ PATH="${PATH//$VIRTUAL_ENV_OLD}"
 ## ** REMOVE THIS LINE FROM .profile AND .bash_profile ** ##
 ## **       OTHERWISE WARNING WILL PERSIST!!           ** ##
 ###**##################################################**###
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$GEM_HOME_OLD:$VIRTUAL_ENV_OLD:$PATH:$HOME/.rvm/bin"
+## Add RVM to PATH for scripting. Make sure this is the last PATH variable change. ##
+if [ "$VIRTUAL_ENV_OLD" ]; then
+  export PATH="$VIRTUAL_ENV_OLD:$PATH:$HOME/.rvm/bin"
+fi
+if [ "$GEM_HOME_OLD" ];then
+  export PATH="$GEM_HOME_OLD:$PATH:$HOME/.rvm/bin"
+fi
 
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+## Load RVM into a shell session *as a function* ##
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
