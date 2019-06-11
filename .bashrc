@@ -190,7 +190,9 @@ set_prompt () {
   ## Tossing this in here because RVM is a shitbox and can't act right ##
   ## If it's not the first variable path in PATH it throws it's ass... ##
   PATH=${PATH//$GEM_HOME_OLD}
-  PATH="$GEM_HOME_OLD:$PATH"
+  if [ "$GEM_HOME_OLD" ]; then
+    PATH="$GEM_HOME_OLD:$PATH"
+  fi
 
   ## Set local variables and clear PS1 ##
   local PY_VENV=""
