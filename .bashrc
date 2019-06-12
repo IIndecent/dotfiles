@@ -16,6 +16,9 @@ PATH=$(getconf PATH)
 ## Load scripts ##
 export PATH="$PATH:$HOME/.scripts"
 
+## Load /snap/bin ##
+export PATH="$PATH:/snap/bin"
+
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
@@ -132,14 +135,14 @@ fi
 ################
 export WINEPREFIX=~/.wine
 
-## ls colors ##
-LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207'; export LS_COLORS
-
 #######################
 ## PS1 configuration ##
 #######################
 
 set_prompt () {
+  ## This variable needs to be set first to enusre accurate alert ##
+  local CMD=$?
+
   ## Colors ##
   local LIGHT_RED="\[\e[00;31m\]"
   local ROOT_RED="\[\e[01;31m\]"
@@ -184,9 +187,6 @@ set_prompt () {
   local GIT_STASHED="$DARK_YELLOW៙"
   local GIT_UP_TO_DATE="$GREEN$CHECK"
 
-  ## This variable needs to be set first to enusre accurate alert ##
-  local CMD=$?
-
   ## Tossing this in here because RVM is a shitbox and can't act right ##
   ## If it's not the first variable path in PATH it throws it's ass... ##
   PATH=${PATH//$GEM_HOME_OLD}
@@ -210,7 +210,6 @@ set_prompt () {
   local GIT_DIRTY
   local GIT_STATUS
   PS1=""
-
 
   ## Get the user ##
   if [ $EUID == 0 ]; then
@@ -314,7 +313,7 @@ set_prompt () {
   fi
 
   ## Add strings to PS1 ##
-  PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW $RESET"
+  PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW$RESET "
 }
 
 # Get the status of the working tree
@@ -389,6 +388,9 @@ fi
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
   . /etc/bash_completion
 fi
+
+## ls colors ##
+LS_COLORS=$LS_COLORS:'di=01;34:fi=38;5;202:ln=38;5;155:ow=38;5;120:ex=38;5;207'; export LS_COLORS
 
 ####################
 ## Custom aliases ##
