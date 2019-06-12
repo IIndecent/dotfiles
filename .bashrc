@@ -364,6 +364,7 @@ function git_status() {
   fi
   if $(echo "$INDEX" | grep '^## [^ ]\+ .*diverged' &> /dev/null); then
     STATUS="$GIT_DIVERGED$STATUS"
+  fi
   if [ "$STATUS" == "" ]; then
     STATUS="$GIT_UP_TO_DATE$STATUS"
   fi
