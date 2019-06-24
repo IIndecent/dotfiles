@@ -298,9 +298,9 @@ set_prompt () {
   fi
 
   ## Subtract the length of the strings in the first line to know how many dashes to add ##
-  ## Add 3 because the trailing dash and box won't be added to the string until later ##
+  ## Add 2 because the trailing dash and box won't be added to the string until later ##
   local SPACE
-    ((SPACE=$COLUMNS - (${#CUR_DIR} + ${#GIT_PROMPT} + ${#PY_VENV} + ${#RB_VENV} + 3)))
+    ((SPACE=$COLUMNS - (${#CUR_DIR} + ${#GIT_PROMPT} + ${#PY_VENV} + ${#RB_VENV} + 2)))
   for ((i = 0; i < $SPACE; i++)); do
     FILLER_LINE+="$DASH"
   done
