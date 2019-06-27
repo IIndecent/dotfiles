@@ -313,7 +313,7 @@ set_prompt () {
   fi
 
   ## Add strings to PS1 ##
-  PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW$RESET \[\e[?16;0;200c\]"
+  PS1+="$RED$FILLER_LINE$PS1_RB_VENV$PS1_PY_VENV$PS1_GIT$RED$DASH$BOX\r\n$RED$BOT_CORNER$DASH[$DARK_GRAY$(date '+%a.%b.%d.%Y' | tr '[a-z]' '[A-Z]')$RED][$DARK_GRAY$(date '+%T')$RED]$DASH$CMD_RESULT$RED$DASH$ARROW$RESET \[\e[?16;0;200c\]"
 }
 
 # Get the status of the working tree
