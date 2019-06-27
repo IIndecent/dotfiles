@@ -17,7 +17,7 @@ PATH=$(getconf PATH)
 export PATH="$PATH:$HOME/.scripts"
 
 ## Load /snap/bin ##
-export PATH="$PATH:/usr/sbin:/snap/bin:/sbin/"
+export PATH="$PATH:/usr/sbin:/snap/bin:/sbin/:/usr/local/bin/:/usr/local/sbin/"
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
