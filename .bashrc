@@ -5,7 +5,6 @@
 ## RVM is a bit of a pain... Save this variable later so it can be prepended to PATH ##
 GEM_HOME_OLD=""
 [[ "$GEM_HOME" ]] && GEM_HOME_OLD="$GEM_HOME/bin"
-
 ## Need to hold Python virtual env for it to be appended somewhere after RVM path ##
 VIRTUAL_ENV_OLD=""
 [[ "$VIRTUAL_ENV" ]] && VIRTUAL_ENV_OLD="$VIRTUAL_ENV/bin"
@@ -138,7 +137,6 @@ export WINEPREFIX=~/.wine
 #######################
 ## PS1 configuration ##
 #######################
-
 set_prompt () {
   ## This variable needs to be set first to enusre accurate alert ##
   local CMD=$?
@@ -234,7 +232,9 @@ set_prompt () {
   if [ "$GEM_HOME" != "" ]; then
     GEMSET=$(rvm gemset list | grep '^=> ')
     GEMSET=${GEMSET//"=> "}
-    PS1_RB_VENV="$RED[$DARK_GRAY$RB_START_FIN$RED${LIGHT_RED}rb$DARK_YELLOW$SEPERATOR${LIGHT_RED}env$DARK_YELLOW$SEPERATOR$LIGHT_RED${GEM_HOME##*/}$DARK_YELLOW$SEPERATOR$LIGHT_RED$GEMSET$DARK_GRAY$RB_START_FIN$RED]"
+    RVM_HOME=${GEM_HOME##*/}
+    RVM_HOME=${RVM_HOME%"@$GEMSET"}
+    PS1_RB_VENV="$RED[$DARK_GRAY$RB_START_FIN$RED${LIGHT_RED}rb$DARK_YELLOW$SEPERATOR${LIGHT_RED}env$DARK_YELLOW$SEPERATOR$LIGHT_RED$RVM_HOME$DARK_YELLOW$SEPERATOR$LIGHT_RED$GEMSET$DARK_GRAY$RB_START_FIN$RED]"
   else
     PS1_RB_VENV=""
   fi
@@ -548,3 +548,7 @@ fi
 
 ## Load RVM into a shell session *as a function* ##
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+
+## Set terminal ruby environment back to system ##
+RUN="rvm use system"
+${RUN} && "clear"
