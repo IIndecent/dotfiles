@@ -551,6 +551,6 @@ fi
 
 ## Set terminal ruby environment back to system ##
 RUN="rvm use system"
-if [ "rvm use system" ]; then
+if [[ -s "$HOME/.rvm/scripts/rvm" ]]; then
   ${RUN}
 fi
