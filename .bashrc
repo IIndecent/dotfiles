@@ -559,4 +559,4 @@ fi
 RUN="rvm use system"
 if [[ -s "$HOME/.rvm/scripts/rvm" ]]; then
   ${RUN}
-fi
+fiexport PATH=$HOME/local/bin:$PATH
